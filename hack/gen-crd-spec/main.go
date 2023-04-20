@@ -338,6 +338,12 @@ func injectPatchAnnotations(prop map[string]interface{}, propSchema spec.Schema,
 
 	var propSchemas map[string]spec.Schema
 	refStr := propSchema.Ref.String()
+
+	if propSchema.SchemaProps.Type.Contains("array") {
+		refStr = propSchema.Items.Schema.SchemaProps.Ref.String()
+		propSchema = *propSchema.Items.Schema
+	}
+
 	normalizedRef := normalizeRef(refStr)
 	switch {
 	case normalizedRef == "":
@@ -350,7 +356,12 @@ func injectPatchAnnotations(prop map[string]interface{}, propSchema spec.Schema,
 		propSchemas = schema.Properties
 	}
 
-	childProps, ok := prop["properties"].(map[string]interface{})
+	tmpProp := prop
+	if items, ok := prop["items"]; ok {
+		tmpProp = items.(map[string]interface{})
+	}
+
+	childProps, ok := tmpProp["properties"].(map[string]interface{})
 	if !ok {
 		childProps = map[string]interface{}{}
 	}
